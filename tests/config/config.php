@@ -34,6 +34,7 @@ return [
                     ],
                 ],
             ],
+            'credentials' => 'other_account',
         ],
 
         /*
@@ -60,15 +61,38 @@ return [
             ],
             'access_patterns' => require 'access_patterns.php',
             'global_secondary_indexes' => require 'gsis.php',
+            'credentials' => 'default',
         ],
     ],
 
-    'sdk' => [
-        'region' => env('DYNAMODB_REGION', 'us-west-2'),
-        'version' => env('DYNAMODB_VERSION', 'latest'),
-        'credentials' => [
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+    /*
+    * 'credentials' holds the different AWS credential sets.
+    */
+    'credentials' => [
+        'default' => [ // Default credential set
+            'region' => env('DYNAMODB_REGION', 'us-west-2'),
+            'version' => env('DYNAMODB_VERSION', 'latest'),
+            'endpoint' => env('DYNAMODB_ENDPOINT'),
+            'credentials' => [
+                'key' => env('AWS_ACCESS_KEY_ID'),
+                'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            ],
         ],
+
+        'other_account' => [ // Credentials for another AWS account
+            'region' => env('DYNAMODB_OTHER_REGION', 'us-east-1'),
+            'version' => env('DYNAMODB_VERSION', 'latest'),
+            'endpoint' => env('DYNAMODB_ENDPOINT'),
+            'credentials' => [
+                'key' => env('AWS_OTHER_ACCESS_KEY_ID'),
+                'secret' => env('AWS_OTHER_SECRET_ACCESS_KEY'),
+            ],
+        ],
+
+        // ... potentially more credential sets
+    ],
+
+    'additional_query_mappings' => [
+        'expression_attribute_names' => 'ExpressionAttributeNames',
     ],
 ];

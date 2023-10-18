@@ -40,4 +40,6 @@ jobs:
         cors: '*'
     - name: Run tests
       run: vendor/bin/phpunit --testdox
+    - name: Run lint
+      run: composer test:lint
         

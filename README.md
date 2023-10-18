@@ -1,12 +1,23 @@
 # DynamoBreeze
 
-A Laravel package for easily interacting with Amazon DynamoDB using a single-table approach and a facade for streamlined developer experience.
+**DynamoBreeze** is a Laravel package designed to simplify interactions with Amazon DynamoDB. While it accommodates the single-table design principle, it's versatile enough to support multiple-table usage, providing a seamless experience regardless of your database's architecture. Importantly, it enables the use of multiple AWS credentials, a key feature for applications requiring access to tables across different AWS accounts or those utilizing specific IAM keys for certain tables. Through a fluent, expressive facade, DynamoBreeze makes it easier than ever to work with DynamoDB.
+
+## Key Features
+
+- **Single or Multiple Table Support**: Whether you're adhering to a single-table design or using multiple tables, DynamoBreeze adapts to your needs, allowing for efficient interactions with your data without the complexity.
+- **Multiple AWS Credentials**: DynamoBreeze's architecture facilitates the use of different AWS credentials for various tables, perfect for interacting with multiple AWS accounts or applying specific keys and secrets to individual tables. This capability ensures a flexible and secure approach to managing your data across diverse environments.
+- **Expressive Syntax**: Leverage the power of fluent syntax to build your DynamoDB queries, making them more readable and maintainable.
+- **Streamlined Configuration**: Define your table structures and access patterns in a central configuration, making it easy to manage and query your data.
+
+- **Customizable**: Ready to be used out of the box, but built with customization in mind, so you can adjust it according to your application's requirements.
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Example Usage](#example-usage)
+- [Handling Responses with DynamoBreezeResult](#handling-responses-with-dynamobreezeresult)
+- [Extending Query Parameter Mappings](#extending-query-parameter-mappings)
 - [Testing](#testing)
 - [Contribution](#contribution)
 - [License](#license)
@@ -92,6 +103,7 @@ return [
                 ],
                 // ...
             ],
+            'credentials' => 'other_account',
             // ... additional settings for the table
         ],
         
@@ -108,13 +120,30 @@ return [
     /*
     * 'sdk' holds the configuration for the AWS SDK.
     */
-    'sdk' => [
-        'region'   => env('DYNAMODB_REGION', 'us-west-2'),
-        'version'  => env('DYNAMODB_VERSION', 'latest'),
-        'credentials' => [
-            'key'    => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+    'credentials' => [
+        'default' => [ // Default credential set
+            'region' => env('DYNAMODB_REGION', 'us-west-2'),
+            'version' => env('DYNAMODB_VERSION', 'latest'),
+            'endpoint' => env('DYNAMODB_ENDPOINT'),
+            'credentials' => [
+                'key' => env('AWS_ACCESS_KEY_ID'),
+                'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            ],
         ],
+
+        'other_account' => [ // Credentials for another AWS account
+            'region' => env('DYNAMODB_OTHER_REGION', 'us-east-1'),
+            'version' => env('DYNAMODB_VERSION', 'latest'),
+            'endpoint' => env('DYNAMODB_ENDPOINT'),
+            'credentials' => [
+                'key' => env('AWS_OTHER_ACCESS_KEY_ID'),
+                'secret' => env('AWS_OTHER_SECRET_ACCESS_KEY'),
+            ],
+        ],
+
+        // 'another_set' => [
+        //     // ...
+        // ],
     ],
 ];
 ```
@@ -124,10 +153,9 @@ return [
 ```php
 use Musonza\DynamoBreeze\Facades\DynamoBreeze;
 
-$result = DynamoBreeze::table('social_media')
+$result = DynamoBreeze::withTableIdentifier('social_media')
     ->accessPattern('FetchUserPosts', [
-        ':pk_val' => 'USER#' . $userId,
-        ':sk_val' => 'POST#',
+        'user_id' => $userId,
     ])
     ->get();
 ```
@@ -135,10 +163,9 @@ $result = DynamoBreeze::table('social_media')
 #### Fetch Post Comments
 
 ```php
-$comments = DynamoBreeze::table('social_media')
+$comments = DynamoBreeze::withTableIdentifier('social_media')
     ->accessPattern('FetchPostComments', [
-        ':pk_val' => 'POST#' . $postId,
-        ':sk_val' => 'COMMENT#',
+        'post_id' => $postId,
     ])
     ->get();
 ```
@@ -146,10 +173,9 @@ $comments = DynamoBreeze::table('social_media')
 #### Fetch Post Likes
 
 ```php
-$likes = DynamoBreeze::table('social_media')
+$likes = DynamoBreeze::withTableIdentifier('social_media')
     ->accessPattern('FetchPostLikes', [
-        ':pk_val' => 'POST#' . $postId,
-        ':sk_val' => 'LIKE#',
+        'post_id' => $postId,
     ])
     ->get();
 ```
@@ -157,15 +183,78 @@ $likes = DynamoBreeze::table('social_media')
 #### Fetch Conversation Messages
 
 ```php
-$messages = DynamoBreeze::table('social_media')
+$messages = DynamoBreeze::withTableIdentifier('social_media')
     ->accessPattern('FetchConversationMessages', [
-        ':pk_val' => 'CONVERSATION#' . $conversationId,
-        ':sk_val' => 'MESSAGE#',
+        'conversation_id' => $conversationId,
     ])
     ->get();
 ```
 
-Ensure that keys, table names, and access patterns align with your actual DynamoDB setup to avoid discrepancies or errors.
+## Handling Responses with DynamoBreezeResult
+
+All operations performed through the DynamoBreeze facade will return an instance of `DynamoBreezeResult`. This object provides a convenient way to interact with the data returned from DynamoDB, offering several methods to retrieve specific portions of the AWS result or the entire raw result.
+
+### Methods Available
+
+- `getItems()`: Returns an array of items from the result. If no items are found, it returns null.
+
+- `getCount()`: Retrieves the count of returned items. If no count is provided in the result, it returns null.
+
+- `getRawResult()`: Provides access to the original `Aws\Result` object, allowing you to retrieve any data or metadata returned from the AWS SDK's DynamoDB client.
+
+### Example
+
+```php
+use Musonza\DynamoBreeze\Facades\DynamoBreeze;
+
+// Perform an operation
+$result = DynamoBreeze::withTableIdentifier('social_media')
+    ->accessPattern('FetchUserPosts', [
+        'user_id' => $userId,
+    ])
+    ->get();
+
+// Get the items returned from DynamoDB
+$items = $result->getItems();
+
+// Get the count of items
+$count = $result->getCount();
+
+// Access the raw AWS SDK result object
+$rawResult = $result->getRawResult();
+```
+
+## Extending Query Parameter Mappings
+
+DynamoBreeze provides a core set of mappings that translate specific configuration keys to the corresponding DynamoDB query parameters. These mappings are used internally to build queries from your application's configurations.
+
+While the default mappings cover a wide range of common use cases, there might be scenarios where you need to extend or override these mappings. For such cases, DynamoBreeze offers a flexible solution through the `additional_query_mappings` configuration.
+
+### Adding Custom Mappings
+
+If you need to add new mappings that aren't included in the default set, you can define them in your application's `dynamo-breeze` configuration file under the `additional_query_mappings` key.
+
+Here's an example of how to set up `additional_query_mappings:`
+
+```php
+// In your config/dynamo-breeze.php configuration file
+
+return [
+    'tables' => [],
+    // ... other configuration values ...
+
+    'additional_query_mappings' => [
+        'your_config_key' => 'DynamoQueryParam',
+        // other custom mappings...
+    ],
+];
+```
+
+In this example, `your_config_key` is the key you use in your application's configuration, and `DynamoQueryParam` is the corresponding parameter that DynamoDB expects in a query.
+
+#### Use Case
+
+A practical use case for adding custom mappings could be when you're using a newer feature of DynamoDB that isn't yet covered by DynamoBreeze's default mappings. By adding the necessary mapping, you ensure your application can take advantage of all DynamoDB features while maintaining the convenience of using DynamoBreeze.
 
 ## Testing
 
@@ -173,8 +262,12 @@ Ensure that keys, table names, and access patterns align with your actual Dynamo
 
 ## Contribution
 
-Contributions are welcome and will be fully credited. Please see [CONTRIBUTING](.github/CONTRIBUTING.md) and [CODE_OF_CONDUCT](.github/CODE_OF_CONDUCT.md) for details.
+Contributions are welcome and will be fully credited. Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
 
 ## License
 
-DynamoBreeze is open-sourced software licensed under the [MIT license](LICENSE.md).
+DynamoBreeze is open-sourced software licensed under the [MIT license](https://github.com/musonza/dynamo-breeze/blob/main/LICENSE).
+
+## Contact
+
+For general questions, brainstorming, and open-ended discussion, please use our [GitHub Discussions](https://github.com/musonza/dynamo-breeze/discussions/2). This is a great place to start socializing ideas, seek help from other community members, or discuss broader topics related to the project. Remember, a fresh perspective can be invaluable, and your insights might just spark the next big feature or improvement.
