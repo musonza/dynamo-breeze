@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" backupStaticAttributes="false" bootstrap="vendor/autoload.php" colors="true" convertErrorsToExceptions="true" convertNoticesToExceptions="true" convertWarningsToExceptions="true" processIsolation="false" stopOnFailure="false" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+  <coverage>
+    <include>
+      <directory suffix=".php">src/</directory>
+    </include>
+  </coverage>
+  <testsuites>
+    <testsuite name="Feature Tests">
+      <directory suffix=".php">./tests/Feature</directory>
+    </testsuite>
+    <testsuite name="Unit Tests">
+      <directory suffix=".php">./tests/Unit</directory>
+    </testsuite>
+  </testsuites>
+  <php>
+    <env name="AWS_ACCESS_KEY_ID" value="fake" force="true" />
+    <env name="AWS_SECRET_ACCESS_KEY" value="fake" force="true" />
+    <env name="AWS_REGION" value="us-east-1" />
+    <env name="DYNAMODB_ENDPOINT" value="http://localhost:8000" force="true" />
+  </php>
+</phpunit>
