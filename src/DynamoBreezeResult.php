@@ -23,6 +23,11 @@ class DynamoBreezeResult
         return $this->awsResult->get('Count');
     }
 
+    public function getLastEvaluatedKey()
+    {
+        return $this->awsResult->get('LastEvaluatedKey');
+    }
+
     public function getRawResult(): Result
     {
         return $this->awsResult;

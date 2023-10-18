@@ -14,23 +14,19 @@ class DynamoDbTableSeeder
         $this->service = app(DynamoBreezeService::class);
     }
 
-    public function seed(array $items, string $tableName): void
+    public function seed(array $items, string $tableIdentifier): void
     {
+        // Specify the table we're working with.
+        $this->service->withTableIdentifier($tableIdentifier);
         foreach ($items as $item) {
-            $this->putItem($item, $tableName);
+            $this->putItem($item);
         }
     }
 
-    protected function putItem(array $item, string $tableName): void
+    protected function putItem(array $item): void
     {
         $dynamoDbItem = $this->formatItemForDynamoDb($item);
-
-        $params = [
-            'TableName' => $tableName,
-            'Item' => $dynamoDbItem,
-        ];
-
-        $this->service->getClient()->putItem($params);
+        $this->service->insertRecord(['Item' => $dynamoDbItem]);
     }
 
     protected function formatItemForDynamoDb(array $item): array

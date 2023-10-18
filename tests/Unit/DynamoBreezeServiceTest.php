@@ -19,8 +19,8 @@ class DynamoBreezeServiceTest extends TestCase
 
     public function testTableMethodSetsTableName(): void
     {
-        $this->dynamoBreezeService->table('example_table');
-        $this->assertSame('ExampleTable', $this->dynamoBreezeService->getTableName());
+        $this->dynamoBreezeService->withTableIdentifier('example_table');
+        $this->assertSame('ExampleTable', $this->dynamoBreezeService->queryBuilder->getTableName());
     }
 
     /**
@@ -32,12 +32,12 @@ class DynamoBreezeServiceTest extends TestCase
         array $dataProvider,
         array $expectedExpressions
     ): void {
-        $this->dynamoBreezeService->table($table)
+        $this->dynamoBreezeService->withTableIdentifier($table)
             ->accessPattern($patternName, $dataProvider);
-        $accessPatternConfig = $this->dynamoBreezeService->getAccessPatternConfig();
+        $accessPatternConfig = $this->dynamoBreezeService->queryBuilder->getAccessPatternConfig();
 
         $this->assertSame($patternName, $accessPatternConfig['patternName']);
-        $this->assertSame($expectedExpressions, $this->dynamoBreezeService->getExpressions());
+        $this->assertSame($expectedExpressions, $this->dynamoBreezeService->queryBuilder->getExpressions());
     }
 
     public function provideAccessPatternData(): array
