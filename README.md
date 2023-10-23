@@ -130,7 +130,6 @@ return [
                 'key' => env('AWS_ACCESS_KEY_ID'),
                 'secret' => env('AWS_SECRET_ACCESS_KEY'),
             ],
-<<<<<<< HEAD
         ],
 
         'other_account' => [ // Credentials for another AWS account
@@ -143,20 +142,6 @@ return [
             ],
         ],
 
-=======
-        ],
-
-        'other_account' => [ // Credentials for another AWS account
-            'region' => env('DYNAMODB_OTHER_REGION', 'us-east-1'),
-            'version' => env('DYNAMODB_VERSION', 'latest'),
-            'endpoint' => env('DYNAMODB_ENDPOINT'),
-            'credentials' => [
-                'key' => env('AWS_OTHER_ACCESS_KEY_ID'),
-                'secret' => env('AWS_OTHER_SECRET_ACCESS_KEY'),
-            ],
-        ],
-
->>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
         // 'another_set' => [
         //     // ...
         // ],
