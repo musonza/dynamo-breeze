@@ -164,7 +164,6 @@ class ExampleFeatureTest extends FeatureTestCase
         $this->assertCount(1, $retrievedFromSecondTable);
     }
 
-<<<<<<< HEAD
     public function testQueryPagination(): void
     {
         // More than 10 items for USER#1.
