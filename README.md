@@ -264,7 +264,6 @@ return [
         // other custom mappings...
     ],
 ];
-<<<<<<< HEAD
 ```
 
 In this example, `your_config_key` is the key you use in your application's configuration, and `DynamoQueryParam` is the corresponding parameter that DynamoDB expects in a query.
@@ -290,9 +289,9 @@ $userId = 1; // The user whose posts we are fetching
 do {
     /** @var DynamoBreezeResult $result */
     $result = DynamoBreeze::withTableIdentifier(self::TABLE_IDENTIFIER)
+        ->accessPattern('FetchUserPosts', ['user_id' => $userId]) // Specify access pattern and relevant data
         ->limit($pageSize) // Limit the number of items fetched per request
         ->exclusiveStartKey($startKey) // Identify the starting point for the next set of results
-        ->accessPattern('FetchUserPosts', ['user_id' => $userId]) // Specify access pattern and relevant data
         ->get(); // Execute the query
 
     $items = $result->getItems(); // Retrieve the items from the current page
@@ -305,12 +304,6 @@ do {
 // At this point, $retrievedItemsCount contains the total count of items retrieved
 // And $items contains the items from the last fetched page
 ```
-
-In this example, `your_config_key` is the key you use in your application's configuration, and `DynamoQueryParam` is the corresponding parameter that DynamoDB expects in a query.
-
-#### Use Case
-
-A practical use case for adding custom mappings could be when you're using a newer feature of DynamoDB that isn't yet covered by DynamoBreeze's default mappings. By adding the necessary mapping, you ensure your application can take advantage of all DynamoDB features while maintaining the convenience of using DynamoBreeze.
 
 ## Testing
 

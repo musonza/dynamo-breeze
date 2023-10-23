@@ -205,10 +205,6 @@ class ExampleFeatureTest extends FeatureTestCase
 
     public function testFindPostsByUserWithFilter(): void
     {
-=======
-    public function testFindPostsByUserWithFilter(): void
-    {
->>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
         $posts = [
             ['PK' => 'USER#1', 'SK' => 'POST#123', 'CategoryId' => 'A', 'Content' => 'Hello, World!', 'Timestamp' => time()],
             ['PK' => 'USER#1', 'SK' => 'POST#124', 'CategoryId' => 'B', 'Content' => 'My second post!', 'Timestamp' => time()],
