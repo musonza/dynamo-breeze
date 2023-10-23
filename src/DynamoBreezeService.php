@@ -19,10 +19,13 @@ class DynamoBreezeService
 
     protected ExpressionAttributeHandler $expressionAttributeHandler;
 
+<<<<<<< HEAD
     protected $exclusiveStartKey = null;
 
     protected int $limit = 0;
 
+=======
+>>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
     public function __construct(
         QueryBuilderInterface $queryBuilder,
         DynamoDbClientFactory $dynamoDbFactory,
@@ -52,20 +55,46 @@ class DynamoBreezeService
         return $this;
     }
 
+<<<<<<< HEAD
     public function limit(int $limit): self
     {
         $this->limit = $limit;
 
         return $this;
+=======
+    public function getDynamoDbClient(): DynamoDbClient
+    {
+        if (! $this->dynamoDb) {
+            $this->dynamoDb = $this->dynamoDbFactory->make($this->tableIdentifier);
+        }
+
+        return $this->dynamoDb;
+>>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
     }
 
     public function exclusiveStartKey($startKey)
     {
+<<<<<<< HEAD
         $this->exclusiveStartKey = $startKey;
+=======
+        $accessPatternConfig = [];
+        $accessPatternConfig['patternName'] = $patternName;
+        $accessPattern = $this->config['tables'][$this->tableIdentifier]['access_patterns'][$patternName];
+
+        if (isset($accessPattern['expression_attribute_values'])) {
+            $accessPatternConfig['expressions'] = $this->expressionAttributeHandler->prepareExpressionAttributes(
+                $accessPattern['expression_attribute_values'],
+                $dataProvider
+            );
+        }
+>>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
+
+        $this->queryBuilder->setAccessPatternConfig($accessPatternConfig);
 
         return $this;
     }
 
+<<<<<<< HEAD
     public function getDynamoDbClient(): DynamoDbClient
     {
         if (! $this->dynamoDb) {
@@ -103,10 +132,36 @@ class DynamoBreezeService
         $parameters = array_merge(['TableName' => $this->queryBuilder->getTableName()], $parameters);
 
         return $this->getDynamoDbClient()->putItem($parameters);
+=======
+    /**
+     * Insert a record into DynamoDB.
+     *
+     * @return mixed
+     */
+    public function insertRecord(array $parameters)
+    {
+        $parameters = array_merge(['TableName' => $this->queryBuilder->getTableName()], $parameters);
+
+        return $this->getDynamoDbClient()->putItem($parameters);
     }
 
     public function get(): DynamoBreezeResult
     {
+        $patternConfig = $this->config['tables'][$this->tableIdentifier]['access_patterns'][$this->queryBuilder->getAccessPatternName()];
+
+        $query = $this->queryBuilder->buildQuery($patternConfig);
+
+        $this->queryBuilder->setTableName($this->queryBuilder->getTableName());
+
+        $result = $this->getDynamoDbClient()->query($query);
+
+        return new DynamoBreezeResult($result);
+>>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
+    }
+
+    public function batchGet(array $batchItems): DynamoBreezeResult
+    {
+<<<<<<< HEAD
         $patternConfig = $this->config['tables'][$this->tableIdentifier]['access_patterns'][$this->queryBuilder->getAccessPatternName()];
 
         $query = $this->queryBuilder->buildQuery($patternConfig);
@@ -130,6 +185,10 @@ class DynamoBreezeService
     {
         $requestItems = [];
 
+=======
+        $requestItems = [];
+
+>>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
         foreach ($batchItems as $tableIdentifier => $details) {
             $keys = [];
             foreach ($details['keys'] as $keyData) {

@@ -18,7 +18,10 @@
 - [Example Usage](#example-usage)
 - [Handling Responses with DynamoBreezeResult](#handling-responses-with-dynamobreezeresult)
 - [Extending Query Parameter Mappings](#extending-query-parameter-mappings)
+<<<<<<< HEAD
 - [Pagination](#pagination)
+=======
+>>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
 - [Testing](#testing)
 - [Contribution](#contribution)
 - [License](#license)
@@ -130,6 +133,7 @@ return [
                 'key' => env('AWS_ACCESS_KEY_ID'),
                 'secret' => env('AWS_SECRET_ACCESS_KEY'),
             ],
+<<<<<<< HEAD
         ],
 
         'other_account' => [ // Credentials for another AWS account
@@ -142,6 +146,20 @@ return [
             ],
         ],
 
+=======
+        ],
+
+        'other_account' => [ // Credentials for another AWS account
+            'region' => env('DYNAMODB_OTHER_REGION', 'us-east-1'),
+            'version' => env('DYNAMODB_VERSION', 'latest'),
+            'endpoint' => env('DYNAMODB_ENDPOINT'),
+            'credentials' => [
+                'key' => env('AWS_OTHER_ACCESS_KEY_ID'),
+                'secret' => env('AWS_OTHER_SECRET_ACCESS_KEY'),
+            ],
+        ],
+
+>>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
         // 'another_set' => [
         //     // ...
         // ],
@@ -249,6 +267,7 @@ return [
         // other custom mappings...
     ],
 ];
+<<<<<<< HEAD
 ```
 
 In this example, `your_config_key` is the key you use in your application's configuration, and `DynamoQueryParam` is the corresponding parameter that DynamoDB expects in a query.
@@ -290,6 +309,15 @@ do {
 // And $items contains the items from the last fetched page
 ```
 
+=======
+```
+
+In this example, `your_config_key` is the key you use in your application's configuration, and `DynamoQueryParam` is the corresponding parameter that DynamoDB expects in a query.
+
+#### Use Case
+
+A practical use case for adding custom mappings could be when you're using a newer feature of DynamoDB that isn't yet covered by DynamoBreeze's default mappings. By adding the necessary mapping, you ensure your application can take advantage of all DynamoDB features while maintaining the convenience of using DynamoBreeze.
+>>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
 
 ## Testing
 
