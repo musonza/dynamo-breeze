@@ -71,6 +71,7 @@ class DynamoBreezeService
     public function exclusiveStartKey($startKey): self
     {
         $this->exclusiveStartKey = $startKey;
+
         return $this;
     }
 
@@ -92,10 +93,10 @@ class DynamoBreezeService
         return $this;
     }
 
-     /* Insert a record into DynamoDB.
-     *
-     * @return mixed
-     */
+    /* Insert a record into DynamoDB.
+    *
+    * @return mixed
+    */
     public function insertRecord(array $parameters)
     {
         $parameters = array_merge(['TableName' => $this->queryBuilder->getTableName()], $parameters);
