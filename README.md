@@ -40,7 +40,7 @@ composer require musonza/dynamo-breeze
 After installing the package, publish the configuration file by running:
 
 ```bash
-php artisan vendor:publish --provider="Musonza\DynamoBreeze\DynamoBreezeServiceProvider" --tag="config"
+php artisan vendor:publish --provider="Musonza\DynamoBreeze\DynamoBreezeServiceProvider"
 ```
 
 ## Example Usage
