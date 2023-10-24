@@ -145,8 +145,7 @@ class ExampleFeatureTest extends FeatureTestCase
             ['PostId' => '1', 'Timestamp' => 11111],
         ];
 
-        $result = DynamoBreeze::withTableIdentifier(self::TABLE_IDENTIFIER)
-            ->batchGet([
+        $result = DynamoBreeze::batchGet([
                 self::TABLE_IDENTIFIER => [
                     'keys' => $keysToGet,
                 ],

@@ -130,6 +130,7 @@ class DynamoBreezeService
         $requestItems = [];
 
         foreach ($batchItems as $tableIdentifier => $details) {
+            $this->tableIdentifier = $tableIdentifier;
             $keys = [];
             foreach ($details['keys'] as $keyData) {
                 $keys[] = $this->expressionAttributeHandler->marshaler->marshalItem($keyData);
