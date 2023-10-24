@@ -197,6 +197,9 @@ $result = DynamoBreeze::withTableIdentifier('social_media')
     ->accessPattern('FetchUserPosts', [
         'user_id' => $userId,
     ])
+    ->limit(10)
+    ->exclusiveStartKey($startKey)
+    ->projectionExpression('Content, CategoryId')
     ->get();
 
 // Get the items returned from DynamoDB
