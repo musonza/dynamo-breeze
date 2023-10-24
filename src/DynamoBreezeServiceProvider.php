@@ -9,10 +9,6 @@ class DynamoBreezeServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->publishes([
-            __DIR__.'/../config' => config_path(),
-        ], 'dynamo-breeze');
-
         $this->app->singleton(DynamoDbClientFactory::class, function ($app) {
             $config = $app->make('config')->get('dynamo-breeze');
 
@@ -34,7 +30,7 @@ class DynamoBreezeServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->publishes([
-            __DIR__.'/../config' => config_path('dynamo-breeze.php'),
+            __DIR__.'/../config/dynamo-breeze.php' => config_path('dynamo-breeze.php'),
         ], 'dynamo-breeze');
     }
 }

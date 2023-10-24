@@ -50,13 +50,8 @@ return [
     | AWS SDK Configuration
     |--------------------------------------------------------------------------
     |
-<<<<<<< HEAD
     | Here you may configure AWS SDK settings.
     | Each array under the 'credentials' key
-=======
-    | This configuration file is dedicated to the AWS SDK settings. It's especially
-    | crucial for services like DynamoDB. Each array under the 'credentials' key
->>>>>>> e06a2ea7b060c618b85fdeeb5ae7f3e594be4dfc
     | represents a different set of credentials that your application can use
     | when interacting with AWS services. The 'default' configuration is used
     | when no specific credential set is requested.
