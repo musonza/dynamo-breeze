@@ -20,6 +20,8 @@
 - [Extending Query Parameter Mappings](#extending-query-parameter-mappings)
 - [Pagination](#pagination)
 - [Batch Retrieval with batchGet](#batch-retrieval-with-batchget)
+- [Projection Expressions](#projection-expressions)
+- [ReturnConsumedCapacity](#returnconsumedcapacity)
 - [Testing](#testing)
 - [Contribution](#contribution)
 - [License](#license)
@@ -303,7 +305,7 @@ $result = DynamoBreeze::batchGet([
 
 ## Projection Expressions
 
-n the realm of database operations, especially when dealing with extensive datasets, fetching only the necessary pieces of data is crucial for performance optimization. In the context of DynamoDB and hence DynamoBreeze, this selective retrieval of attributes is handled through what's known as "Projection Expressions."
+In the realm of database operations, especially when dealing with extensive datasets, fetching only the necessary pieces of data is crucial for performance optimization. In the context of DynamoDB and hence DynamoBreeze, this selective retrieval of attributes is handled through what's known as "Projection Expressions."
 
 ```php
 $result = DynamoBreeze::withTableIdentifier('social_media')
