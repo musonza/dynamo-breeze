@@ -2,9 +2,8 @@
 
 namespace Musonza\DynamoBreeze;
 
-use Aws\DynamoDb\DynamoDbClient;
-use Aws\DynamoDb\Marshaler;
 use Illuminate\Support\ServiceProvider;
+use Musonza\DynamoBreeze\Contracts\QueryBuilderInterface;
 
 class DynamoBreezeServiceProvider extends ServiceProvider
 {
@@ -14,19 +13,20 @@ class DynamoBreezeServiceProvider extends ServiceProvider
             __DIR__.'/../config' => config_path(),
         ], 'dynamo-breeze');
 
-        $this->app->singleton(DynamoDbClient::class, function (): DynamoDbClient {
-            return new DynamoDbClient([
-                'version' => 'latest',
-                'region' => Configuration::getRegion(),
-                'endpoint' => Configuration::getDynamodbEndpoint(),
-            ]);
+        $this->app->singleton(DynamoDbClientFactory::class, function ($app) {
+            $config = $app->make('config')->get('dynamo-breeze');
+
+            return new DynamoDbClientFactory($config);
         });
+
+        $this->app->bind(QueryBuilderInterface::class, DefaultQueryBuilder::class);
 
         $this->app->bind(DynamoBreezeService::class, function ($app) {
             return new DynamoBreezeService(
-                $app->make(DynamoDbClient::class),
+                $app->make(QueryBuilderInterface::class),
+                $app->make(DynamoDbClientFactory::class),
                 config('dynamo-breeze'),
-                new Marshaler()
+                $app->make(ExpressionAttributeHandler::class),
             );
         });
     }

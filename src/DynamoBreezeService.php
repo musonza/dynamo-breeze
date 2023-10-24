@@ -3,35 +3,43 @@
 namespace Musonza\DynamoBreeze;
 
 use Aws\DynamoDb\DynamoDbClient;
-use Aws\DynamoDb\Marshaler;
+use Musonza\DynamoBreeze\Contracts\QueryBuilderInterface;
 
 class DynamoBreezeService
 {
-    protected DynamoDbClient $dynamoDb;
+    protected ?DynamoDbClient $dynamoDb = null;
+
+    protected DynamoDbClientFactory $dynamoDbFactory;
 
     protected array $config;
 
-    protected string $tableName;
-
     protected string $tableIdentifier;
 
-    protected array $accessPatternConfig = [];
+    public QueryBuilderInterface $queryBuilder;
 
-    protected Marshaler $marshaler;
+    protected ExpressionAttributeHandler $expressionAttributeHandler;
 
-    public function __construct(DynamoDbClient $dynamoDb, array $config, Marshaler $marshaler)
-    {
-        $this->dynamoDb = $dynamoDb;
+    protected $exclusiveStartKey = null;
+
+    protected int $limit = 0;
+
+    protected ?string $projectionExpression = null;
+
+    protected ?string $returnConsumedCapacity = null;
+
+    public function __construct(
+        QueryBuilderInterface $queryBuilder,
+        DynamoDbClientFactory $dynamoDbFactory,
+        array $config,
+        ExpressionAttributeHandler $expressionAttributeHandler
+    ) {
+        $this->queryBuilder = $queryBuilder;
+        $this->dynamoDbFactory = $dynamoDbFactory;
         $this->config = $config;
-        $this->marshaler = $marshaler;
+        $this->expressionAttributeHandler = $expressionAttributeHandler;
     }
 
-    public function getClient(): DynamoDbClient
-    {
-        return $this->dynamoDb;
-    }
-
-    public function table(string $tableIdentifier): self
+    public function withTableIdentifier(string $tableIdentifier): self
     {
         $this->tableIdentifier = $tableIdentifier;
 
@@ -39,148 +47,147 @@ class DynamoBreezeService
             throw new \Exception("Table identifier {$tableIdentifier} is not defined in config");
         }
 
-        $this->tableName = $this->config['tables'][$tableIdentifier]['table_name'];
+        $tableName = $this->config['tables'][$tableIdentifier]['table_name'];
+
+        $this->queryBuilder->setTableName($tableName);
+
+        $this->dynamoDb = $this->dynamoDbFactory->make($tableIdentifier);
 
         return $this;
     }
 
-    public function getTableName(): string
+    public function limit(int $limit): self
     {
-        return $this->tableName;
+        $this->limit = $limit;
+
+        return $this;
+    }
+
+    public function getDynamoDbClient(): DynamoDbClient
+    {
+        if (! $this->dynamoDb) {
+            $this->dynamoDb = $this->dynamoDbFactory->make($this->tableIdentifier);
+        }
+
+        return $this->dynamoDb;
+    }
+
+    public function exclusiveStartKey($startKey): self
+    {
+        $this->exclusiveStartKey = $startKey;
+
+        return $this;
+    }
+
+    public function projectionExpression(string $expression): self
+    {
+        $this->projectionExpression = $expression;
+
+        return $this;
+    }
+
+    public function returnConsumedCapacity(string $returnConsumedCapacity): self
+    {
+        $this->returnConsumedCapacity = $returnConsumedCapacity;
+
+        return $this;
     }
 
     public function accessPattern(string $patternName, array $dataProvider): self
     {
-        $this->accessPatternConfig['patternName'] = $patternName;
+        $accessPatternConfig = [];
+        $accessPatternConfig['patternName'] = $patternName;
         $accessPattern = $this->config['tables'][$this->tableIdentifier]['access_patterns'][$patternName];
 
         if (isset($accessPattern['expression_attribute_values'])) {
-            $expressionAttributes = $this->replacePlaceholders($accessPattern['expression_attribute_values'], $dataProvider);
-            $marshaledAttributes = $this->marshalExpressionAttributeValues($expressionAttributes);
-            $this->accessPatternConfig['expressions'] = $marshaledAttributes;
+            $accessPatternConfig['expressions'] = $this->expressionAttributeHandler->prepareExpressionAttributes(
+                $accessPattern['expression_attribute_values'],
+                $dataProvider
+            );
         }
+
+        $this->queryBuilder->setAccessPatternConfig($accessPatternConfig);
 
         return $this;
     }
 
-    public function getAccessPatternConfig(): array
+    /* Insert a record into DynamoDB.
+    *
+    * @return mixed
+    */
+    public function insertRecord(array $parameters)
     {
-        return $this->accessPatternConfig;
-    }
+        $parameters = array_merge(['TableName' => $this->queryBuilder->getTableName()], $parameters);
 
-    public function getAccessPatternName(): ?string
-    {
-        return $this->accessPatternConfig['patternName'] ?? null;
-    }
-
-    public function getExpressions(): ?array
-    {
-        return $this->accessPatternConfig['expressions'] ?? null;
-    }
-
-    public function replacePlaceholders(array $expressionAttributes, array $dataProvider): array
-    {
-        foreach ($expressionAttributes as &$attribute) {
-            foreach ($attribute as &$value) {
-                foreach ($dataProvider as $placeholder => $replacement) {
-                    $value = str_replace("<$placeholder>", $replacement, $value);
-                }
-            }
-        }
-
-        return $expressionAttributes;
-    }
-
-    public function marshalExpressionAttributeValues(array $expressionAttributes): array
-    {
-        foreach ($expressionAttributes as $key => $attribute) {
-            foreach ($attribute as $type => $value) {
-                // Ensure the value is in the correct format and not already marshaled
-                if ($type === 'S' && is_string($value)) {
-                    $expressionAttributes[$key] = [$type => $value];
-                } elseif ($type === 'N' && is_numeric($value)) {
-                    $expressionAttributes[$key] = [$type => (string) $value];
-                } else {
-                    // TODO test Maps etc
-                    $expressionAttributes[$key] = $this->marshaler->marshalValue($value);
-                }
-            }
-        }
-
-        return $expressionAttributes;
+        return $this->getDynamoDbClient()->putItem($parameters);
     }
 
     public function get(): DynamoBreezeResult
     {
-        $patternConfig = $this->config['tables'][$this->tableIdentifier]['access_patterns'][$this->getAccessPatternName()];
+        $patternConfig = $this->config['tables'][$this->tableIdentifier]['access_patterns'][$this->queryBuilder->getAccessPatternName()];
 
-        $query = [
-            'TableName' => $this->tableName,
-        ];
+        $query = $this->queryBuilder->buildQuery($patternConfig);
 
-        if (isset($patternConfig['key_condition_expression'])) {
-            $query['KeyConditionExpression'] = $patternConfig['key_condition_expression'];
+        $this->queryBuilder->setTableName($this->queryBuilder->getTableName());
+
+        if ($this->limit) {
+            $query['Limit'] = $this->limit;
         }
 
-        if (isset($patternConfig['expression_attribute_names'])) {
-            $query['ExpressionAttributeNames'] = $patternConfig['expression_attribute_names'];
+        if ($this->exclusiveStartKey) {
+            $query['ExclusiveStartKey'] = $this->exclusiveStartKey;
         }
 
-        if ($this->getExpressions()) {
-            $query['ExpressionAttributeValues'] = $this->getExpressions();
+        if ($this->projectionExpression) {
+            $query['ProjectionExpression'] = $this->projectionExpression;
         }
 
-        if (isset($patternConfig['gsi_name'])) {
-            $query['IndexName'] = $patternConfig['gsi_name'];
+        if ($this->returnConsumedCapacity) {
+            $query['ReturnConsumedCapacity'] = $this->returnConsumedCapacity;
         }
 
-        if (isset($patternConfig['projection_expression'])) {
-            $query['ProjectionExpression'] = $patternConfig['projection_expression'];
-        }
-
-        if (isset($patternConfig['scan_index_forward'])) {
-            $query['ScanIndexForward'] = $patternConfig['scan_index_forward'];
-        }
-
-        if (isset($patternConfig['limit'])) {
-            $query['Limit'] = $patternConfig['limit'];
-        }
-
-        $result = $this->getClient()->query($query);
+        $result = $this->getDynamoDbClient()->query($query);
 
         return new DynamoBreezeResult($result);
     }
 
-    /**
-     * Retrieve records with conditions from DynamoDB.
-     *
-     * @return DynamoBreezeResult
-     */
-    public function retrieveRecordsWithConditions(array $parameters)
+    public function batchGet(array $batchItems): DynamoBreezeResult
     {
-        $awsResult = $this->dynamoDb->query($parameters);
+        $requestItems = [];
 
-        return new DynamoBreezeResult($awsResult);
+        foreach ($batchItems as $tableIdentifier => $details) {
+            $this->tableIdentifier = $tableIdentifier;
+            $keys = [];
+            foreach ($details['keys'] as $keyData) {
+                $keys[] = $this->expressionAttributeHandler->marshaler->marshalItem($keyData);
+            }
+
+            $requestItems[$this->config['tables'][$tableIdentifier]['table_name']] = [
+                'Keys' => $keys,
+                'ProjectionExpression' => $this->projectionExpression ?? null,
+            ];
+        }
+
+        $batchGetParams = ['RequestItems' => $requestItems];
+
+        if ($this->returnConsumedCapacity) {
+            $batchGetParams['ReturnConsumedCapacity'] = $this->returnConsumedCapacity;
+        }
+
+        $result = $this->getDynamoDbClient()->batchGetItem($batchGetParams);
+
+        return new DynamoBreezeResult($result);
     }
 
     /**
      * Insert a record into DynamoDB.
      *
      * @return mixed
-     */
-    public function insertRecord(array $parameters)
-    {
-        return $this->dynamoDb->putItem($parameters);
-    }
-
-    /**
-     * Update a record in DynamoDB.
-     *
      * @return mixed
      */
     public function updateRecord(array $parameters)
     {
-        return $this->dynamoDb->updateItem($parameters);
+        return $this->getDynamoDbClient()->updateItem($parameters);
     }
 
     /**
@@ -190,6 +197,6 @@ class DynamoBreezeService
      */
     public function deleteRecord(array $parameters)
     {
-        return $this->dynamoDb->deleteItem($parameters);
+        return $this->getDynamoDbClient()->deleteItem($parameters);
     }
 }

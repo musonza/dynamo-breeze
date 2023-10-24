@@ -83,4 +83,13 @@ return [
         'scan_index_forward' => false,
         'limit' => 10,
     ],
+    'FindPostsByUserWithFilter' => [
+        'key_condition_expression' => 'PK = :pk_val AND begins_with(SK, :sk_prefix_val)',
+        'filter_expression' => 'CategoryId = :CategoryId',
+        'expression_attribute_values' => [
+            ':pk_val' => ['S' => 'USER#<user_id>'],
+            ':sk_prefix_val' => ['S' => 'POST#'],
+            ':CategoryId' => ['S' => '<category_id>'],
+        ],
+    ],
 ];

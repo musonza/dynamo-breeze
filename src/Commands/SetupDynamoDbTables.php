@@ -4,7 +4,7 @@ namespace Musonza\DynamoBreeze\Commands;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
+use Musonza\DynamoBreeze\DynamoDbClientFactory;
 
 class SetupDynamoDbTables extends Command
 {
@@ -14,12 +14,16 @@ class SetupDynamoDbTables extends Command
 
     protected DynamoDbClient $dynamoDb;
 
-    public function handle(DynamoDbClient $dynamoDb, bool $create = true): int
+    protected DynamoDbClientFactory $dynamoDbClientFactory;
+
+    public function handle(bool $create = true): int
     {
-        $this->dynamoDb = $dynamoDb;
+        $dynamoDbClientFactory = app(DynamoDbClientFactory::class);
+        $this->dynamoDbClientFactory = $dynamoDbClientFactory;
         $tablesConfig = config('dynamo-breeze.tables');
 
-        foreach ($tablesConfig as $tableConfig) {
+        foreach ($tablesConfig as $identifier => $tableConfig) {
+            $this->dynamoDb = $dynamoDbClientFactory->make($identifier);
             if ($create) {
                 $this->createTable($tableConfig);
             } else {
@@ -72,20 +76,22 @@ class SetupDynamoDbTables extends Command
         $gsiAttributeDefinitions = [];
 
         foreach ($gsiConfig as $gsi) {
+            $projectionType = $gsi['projection']['ProjectionType'] ?? 'ALL';
+            $readCapacityUnits = $gsi['provisioned_throughput']['ReadCapacityUnits'] ?? 5;
+            $writeCapacityUnits = $gsi['provisioned_throughput']['WriteCapacityUnits'] ?? 5;
+
             $transformedGSIs[] = [
                 'IndexName' => $gsi['index_name'],
                 'KeySchema' => $this->getKeySchema(
                     $gsi['key_schema']['partition_key'],
                     $gsi['key_schema']['sort_key']
                 ),
-                // Assuming all attributes are to be included in the GSI
                 'Projection' => [
-                    'ProjectionType' => 'ALL',
+                    'ProjectionType' => $projectionType,
                 ],
-                // Assuming a provisioned throughput of 5 read and 5 write capacity units for each GSI
                 'ProvisionedThroughput' => [
-                    'ReadCapacityUnits' => 5,
-                    'WriteCapacityUnits' => 5,
+                    'ReadCapacityUnits' => $readCapacityUnits,
+                    'WriteCapacityUnits' => $writeCapacityUnits,
                 ],
             ];
 
@@ -105,10 +111,11 @@ class SetupDynamoDbTables extends Command
 
     protected function getAttributeDefinitions(array $attributes, array $globalSecondaryIndexes = []): array
     {
-        $gsiAttributes = Collection::make($globalSecondaryIndexes)->reduce(function ($carry, $gsi) {
-            foreach ($gsi['key_schema'] as $attributeName) {
-                // TODO Assuming all GSI attributes are of type 'S' (string)
-                $carry[$attributeName] = 'S';
+        $gsiAttributes = collect($globalSecondaryIndexes)->reduce(function ($carry, $gsi) {
+            $gsiAttributes = $gsi['attributes'] ?? [];
+
+            foreach ($gsiAttributes as $attributeName => $type) {
+                $carry[$attributeName] = $type;
             }
 
             return $carry;
@@ -117,7 +124,7 @@ class SetupDynamoDbTables extends Command
         // Merge main attributes and GSI attributes
         $allAttributes = array_merge($attributes, $gsiAttributes);
 
-        return Collection::make($allAttributes)->map(function ($type, $attribute) {
+        return collect($allAttributes)->map(function ($type, $attribute) {
             return [
                 'AttributeName' => $attribute,
                 'AttributeType' => $type,

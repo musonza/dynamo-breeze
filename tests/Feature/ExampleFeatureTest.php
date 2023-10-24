@@ -3,6 +3,8 @@
 namespace Musonza\DynamoBreeze\Tests\Feature;
 
 use Carbon\Carbon;
+use Musonza\DynamoBreeze\DynamoDbConstants;
+use Musonza\DynamoBreeze\Facades\DynamoBreeze;
 use Musonza\DynamoBreeze\Tests\FeatureTestCase;
 use Musonza\DynamoBreeze\Tests\Traits\Helpers;
 
@@ -14,30 +16,217 @@ class ExampleFeatureTest extends FeatureTestCase
 
     private const TABLE_IDENTIFIER = 'social_media';
 
-    public function setUp(): void
+    /**
+     * @dataProvider tableCreationProvider
+     */
+    public function testCreatesTablesFromConfiguration($data)
     {
-        parent::setUp();
-        $posts = [
-            ['PK' => 'USER#1', 'SK' => 'POST#123', 'CategoryId' => 'A', 'Content' => 'Hello, World!', 'Timestamp' => time()],
-            ['PK' => 'USER#1', 'SK' => 'POST#124', 'CategoryId' => 'B', 'Content' => 'My second post!', 'Timestamp' => time()],
-        ];
-        $this->seedDynamoDbTable($posts, self::TABLE_NAME);
+        $this->assertTableExists(self::TABLE_IDENTIFIER, self::TABLE_NAME, $data);
+        $this->assertTrue(true);
     }
 
-    public function testCreatesTablesFromConfiguration()
+    public function tableCreationProvider()
     {
-        $this->assertTableExists(self::TABLE_NAME);
+        return [
+            [
+                [
+                    'AttributeDefinitions' => [
+                        [
+                            'AttributeName' => 'PK',
+                            'AttributeType' => DynamoDbConstants::ATTRIBUTE_TYPE_STRING,
+                        ],
+                        [
+                            'AttributeName' => 'SK',
+                            'AttributeType' => DynamoDbConstants::ATTRIBUTE_TYPE_STRING,
+                        ],
+                        [
+                            'AttributeName' => 'GSI1PK',
+                            'AttributeType' => DynamoDbConstants::ATTRIBUTE_TYPE_STRING,
+                        ],
+                        [
+                            'AttributeName' => 'GSI1SK',
+                            'AttributeType' => DynamoDbConstants::ATTRIBUTE_TYPE_STRING,
+                        ],
+                        [
+                            'AttributeName' => 'GSI2PK',
+                            'AttributeType' => DynamoDbConstants::ATTRIBUTE_TYPE_STRING,
+                        ],
+                        [
+                            'AttributeName' => 'GSI2SK',
+                            'AttributeType' => DynamoDbConstants::ATTRIBUTE_TYPE_NUMBER,
+                        ],
+                    ],
+                    'GlobalSecondaryIndexes' => [
+                        [
+                            'IndexName' => 'GSI1',
+                            'KeySchema' => [
+                                [
+                                    'AttributeName' => 'GSI1PK',
+                                    'KeyType' => DynamoDbConstants::KEY_TYPE_HASH,
+                                ],
+                                [
+                                    'AttributeName' => 'GSI1SK',
+                                    'KeyType' => DynamoDbConstants::KEY_TYPE_RANGE,
+                                ],
+                            ],
+                            'Projection' => [
+                                'ProjectionType' => 'ALL',
+                            ],
+                            'IndexStatus' => 'ACTIVE',
+                            'ProvisionedThroughput' => [
+                                'ReadCapacityUnits' => 5,
+                                'WriteCapacityUnits' => 5,
+                            ],
+                            'IndexSizeBytes' => 0,
+                        ],
+                        [
+                            'IndexName' => 'GSI2',
+                            'KeySchema' => [
+                                [
+                                    'AttributeName' => 'GSI2PK',
+                                    'KeyType' => DynamoDbConstants::KEY_TYPE_HASH,
+                                ],
+                                [
+                                    'AttributeName' => 'GSI2SK',
+                                    'KeyType' => DynamoDbConstants::KEY_TYPE_RANGE,
+                                ],
+                            ],
+                            'Projection' => [
+                                'ProjectionType' => 'KEYS_ONLY',
+                            ],
+                            'IndexStatus' => 'ACTIVE',
+                            'ProvisionedThroughput' => [
+                                'ReadCapacityUnits' => 10,
+                                'WriteCapacityUnits' => 5,
+                            ],
+                            'IndexSizeBytes' => 0,
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 
     public function testFetchUserPosts(): void
     {
+        $posts = [
+            ['PK' => 'USER#1', 'SK' => 'POST#123', 'CategoryId' => 'A', 'Content' => 'Hello, World!', 'Timestamp' => time()],
+            ['PK' => 'USER#1', 'SK' => 'POST#124', 'CategoryId' => 'B', 'Content' => 'My second post!', 'Timestamp' => time()],
+        ];
+
+        $this->seedDynamoDbTable($posts, self::TABLE_IDENTIFIER);
         $this->assertEquals(2, $this->fetchUserPosts(1)->getCount());
+    }
+
+    public function testBatchGetUserPosts(): void
+    {
+        $posts = [
+            ['PK' => 'USER#1', 'SK' => 'POST#123', 'CategoryId' => 'A', 'Content' => 'Hello, World!', 'Timestamp' => time()],
+            ['PK' => 'USER#1', 'SK' => 'POST#124', 'CategoryId' => 'B', 'Content' => 'My second post!', 'Timestamp' => time()],
+            ['PK' => 'USER#2', 'SK' => 'POST#123', 'CategoryId' => 'A', 'Content' => 'Hello, World!', 'Timestamp' => time()],
+            ['PK' => 'USER#3', 'SK' => 'POST#1', 'CategoryId' => 'B', 'Content' => 'My second post!', 'Timestamp' => time()],
+        ];
+        $this->seedDynamoDbTable($posts, self::TABLE_IDENTIFIER);
+
+        $secondTableIdentifier = 'example_table';
+        $secondTableData = ['PostId' => '1', 'Timestamp' => 11111];
+        $this->seedDynamoDbTable([$secondTableData], $secondTableIdentifier);
+
+        // Define the keys for the items we want to retrieve.
+        $keysToGet = [
+            ['PK' => 'USER#1', 'SK' => 'POST#123'],
+            ['PK' => 'USER#1', 'SK' => 'POST#124'],
+            ['PK' => 'USER#2', 'SK' => 'POST#123'],
+            ['PK' => 'USER#3', 'SK' => 'POST#1'],
+            ['PK' => 'USER#404', 'SK' => 'POST#1'],
+        ];
+
+        $secondTableKeysToGet = [
+            ['PostId' => '1', 'Timestamp' => 11111],
+        ];
+
+        $result = DynamoBreeze::returnConsumedCapacity('TOTAL')
+            ->batchGet([
+                self::TABLE_IDENTIFIER => [
+                    'keys' => $keysToGet,
+                ],
+                'example_table' => [
+                    'keys' => $secondTableKeysToGet,
+                ],
+            ]);
+
+        $this->assertEquals(2, count($result->getRawResult()->get('ConsumedCapacity')));
+
+        $retrievedPosts = $result->getRawResult()->get('Responses')['SocialMediaTable'];
+
+        $this->assertCount(4, $retrievedPosts);
+
+        $retrievedFromSecondTable = $result->getRawResult()->get('Responses')['ExampleTable'];
+
+        $this->assertCount(1, $retrievedFromSecondTable);
+    }
+
+    public function testQueryPagination(): void
+    {
+        // More than 10 items for USER#1.
+        $totalItems = 20;
+        $pageSize = 10;
+        $userId = 1;
+
+        $items = [];
+        for ($i = 1; $i <= $totalItems; $i++) {
+            $items[] = [
+                'PK' => 'USER#1',
+                'SK' => 'POST#'.$i,
+                'Content' => 'Content '.$i,
+                'Timestamp' => time(),
+            ];
+        }
+
+        $this->seedDynamoDbTable($items, self::TABLE_IDENTIFIER);
+
+        $startKey = null;
+        $retrievedItemsCount = 0;
+
+        do {
+            /** DynamoBreezeResult @result */
+            $result = DynamoBreeze::withTableIdentifier(self::TABLE_IDENTIFIER)
+                ->limit($pageSize)
+                ->exclusiveStartKey($startKey)
+                ->accessPattern('FetchUserPosts', ['user_id' => $userId])
+                ->get();
+
+            $items = $result->getItems();
+            $retrievedItemsCount += $result->getCount();
+            $startKey = $result->getLastEvaluatedKey();
+        } while ($startKey !== null);
+
+        $this->assertEquals($totalItems, $retrievedItemsCount);
+    }
+
+    public function testFindPostsByUserWithFilter(): void
+    {
+        $posts = [
+            ['PK' => 'USER#1', 'SK' => 'POST#123', 'CategoryId' => 'A', 'Content' => 'Hello, World!', 'Timestamp' => time()],
+            ['PK' => 'USER#1', 'SK' => 'POST#124', 'CategoryId' => 'B', 'Content' => 'My second post!', 'Timestamp' => time()],
+        ];
+        $this->seedDynamoDbTable($posts, self::TABLE_IDENTIFIER);
+
+        $result = DynamoBreeze::withTableIdentifier(self::TABLE_IDENTIFIER)
+            ->accessPattern('FindPostsByUserWithFilter', [
+                'user_id' => 1,
+                'category_id' => 'B',
+            ])
+            ->get();
+
+        $this->assertEquals(1, $result->getCount());
+        $this->assertEquals('B', $this->unmarshalItem($result->getItems()[0])['CategoryId']);
     }
 
     public function testFetchPostComments(): void
     {
         $comments = $this->generateCommentsData(1, 3);
-        $this->seedDynamoDbTable($comments, self::TABLE_NAME);
+        $this->seedDynamoDbTable($comments, self::TABLE_IDENTIFIER);
 
         $this->assertEquals(3, $this->fetchPostComments(1)->getCount());
     }
@@ -45,7 +234,7 @@ class ExampleFeatureTest extends FeatureTestCase
     public function testFetchPostLikes(): void
     {
         $likes = $this->generateLikesData(1, 2);
-        $this->seedDynamoDbTable($likes, self::TABLE_NAME);
+        $this->seedDynamoDbTable($likes, self::TABLE_IDENTIFIER);
 
         $this->assertEquals(2, $this->fetchPostLikes(1)->getCount());
     }
@@ -71,7 +260,7 @@ class ExampleFeatureTest extends FeatureTestCase
             $this->createPostData($userId, $post3Timestamp, 'Post 3 Content', 3),
         ];
 
-        $this->seedDynamoDbTable($postsData, self::TABLE_NAME);
+        $this->seedDynamoDbTable($postsData, self::TABLE_IDENTIFIER);
 
         // Fetch Posts and Assert
         $fetchedPosts = $this->fetchPostsByDate(
@@ -96,7 +285,7 @@ class ExampleFeatureTest extends FeatureTestCase
             $this->createParticipationData($user2, $conversationId, 'User1 Name', false),
         ];
 
-        $this->seedDynamoDbTable($participation, self::TABLE_NAME);
+        $this->seedDynamoDbTable($participation, self::TABLE_IDENTIFIER);
 
         // Send messages and update last message content for use as snippet in conversation
         // listing
@@ -130,7 +319,7 @@ class ExampleFeatureTest extends FeatureTestCase
             ),
         ];
 
-        $this->seedDynamoDbTable($messagesData, self::TABLE_NAME);
+        $this->seedDynamoDbTable($messagesData, self::TABLE_IDENTIFIER);
 
         $this->assertEquals(3, $this->fetchConversationMessages($conversationId)->getCount());
     }
@@ -158,7 +347,7 @@ class ExampleFeatureTest extends FeatureTestCase
             ['PK' => "USER#{$user4}", 'SK' => "CONVERSATION#{$conversation3Id}", 'ConversationName' => 'User1 Name', 'IsGroup' => false],
         ];
 
-        $this->seedDynamoDbTable($participation, self::TABLE_NAME);
+        $this->seedDynamoDbTable($participation, self::TABLE_IDENTIFIER);
 
         $this->assertEquals(3, $this->fetchUserConversations($user1)->getCount());
     }
