@@ -23,6 +23,10 @@ class DynamoBreezeService
 
     protected int $limit = 0;
 
+    protected ?string $projectionExpression = null;
+
+    protected ?string $returnConsumedCapacity = null;
+
     public function __construct(
         QueryBuilderInterface $queryBuilder,
         DynamoDbClientFactory $dynamoDbFactory,
@@ -75,6 +79,18 @@ class DynamoBreezeService
         return $this;
     }
 
+    public function projectionExpression(string $expression): self
+    {
+        $this->projectionExpression = $expression;
+        return $this;
+    }
+
+    public function returnConsumedCapacity(string $returnConsumedCapacity): self
+    {
+        $this->returnConsumedCapacity = $returnConsumedCapacity;
+        return $this;
+    }
+
     public function accessPattern(string $patternName, array $dataProvider): self
     {
         $accessPatternConfig = [];
@@ -120,6 +136,14 @@ class DynamoBreezeService
             $query['ExclusiveStartKey'] = $this->exclusiveStartKey;
         }
 
+        if ($this->projectionExpression) {
+            $query['ProjectionExpression'] = $this->projectionExpression;
+        }
+
+        if ($this->returnConsumedCapacity) {
+            $query['ReturnConsumedCapacity'] = $this->returnConsumedCapacity;
+        }
+
         $result = $this->getDynamoDbClient()->query($query);
 
         return new DynamoBreezeResult($result);
@@ -138,14 +162,17 @@ class DynamoBreezeService
 
             $requestItems[$this->config['tables'][$tableIdentifier]['table_name']] = [
                 'Keys' => $keys,
-                // TODO Other parameters like 'ProjectionExpression'
+                'ProjectionExpression' => $this->projectionExpression ?? null
             ];
         }
 
-        $result = $this->getDynamoDbClient()->batchGetItem([
-            'RequestItems' => $requestItems,
-            // TODO 'ReturnConsumedCapacity' => 'TOTAL', // optional
-        ]);
+        $batchGetParams = ['RequestItems' => $requestItems];
+
+        if ($this->returnConsumedCapacity) {
+            $batchGetParams['ReturnConsumedCapacity'] = $this->returnConsumedCapacity;
+        }
+
+        $result = $this->getDynamoDbClient()->batchGetItem($batchGetParams);
 
         return new DynamoBreezeResult($result);
     }

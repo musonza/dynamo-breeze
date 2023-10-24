@@ -159,6 +159,7 @@ $result = DynamoBreeze::withTableIdentifier('social_media')
     ->accessPattern('FetchUserPosts', [
         'user_id' => $userId,
     ])
+    ->projectionExpression('Content, CategoryId') // specify ProjectionExpression
     ->get();
 ```
 

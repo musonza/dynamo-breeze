@@ -145,7 +145,7 @@ class ExampleFeatureTest extends FeatureTestCase
             ['PostId' => '1', 'Timestamp' => 11111],
         ];
 
-        $result = DynamoBreeze::batchGet([
+        $result = DynamoBreeze::returnConsumedCapacity('TOTAL')->batchGet([
                 self::TABLE_IDENTIFIER => [
                     'keys' => $keysToGet,
                 ],
@@ -153,6 +153,8 @@ class ExampleFeatureTest extends FeatureTestCase
                     'keys' => $secondTableKeysToGet,
                 ],
             ]);
+
+        $this->assertEquals(2, count($result->getRawResult()->get('ConsumedCapacity')));
 
         $retrievedPosts = $result->getRawResult()->get('Responses')['SocialMediaTable'];
 
