@@ -82,12 +82,14 @@ class DynamoBreezeService
     public function projectionExpression(string $expression): self
     {
         $this->projectionExpression = $expression;
+
         return $this;
     }
 
     public function returnConsumedCapacity(string $returnConsumedCapacity): self
     {
         $this->returnConsumedCapacity = $returnConsumedCapacity;
+
         return $this;
     }
 
@@ -162,7 +164,7 @@ class DynamoBreezeService
 
             $requestItems[$this->config['tables'][$tableIdentifier]['table_name']] = [
                 'Keys' => $keys,
-                'ProjectionExpression' => $this->projectionExpression ?? null
+                'ProjectionExpression' => $this->projectionExpression ?? null,
             ];
         }
 
