@@ -3,6 +3,8 @@
 namespace Musonza\DynamoBreeze;
 
 use Illuminate\Support\ServiceProvider;
+use Musonza\DynamoBreeze\Commands\DynamoAccessPatterns;
+use Musonza\DynamoBreeze\Commands\SetupDynamoDbTables;
 use Musonza\DynamoBreeze\Contracts\QueryBuilderInterface;
 
 class DynamoBreezeServiceProvider extends ServiceProvider
@@ -32,5 +34,12 @@ class DynamoBreezeServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/dynamo-breeze.php' => config_path('dynamo-breeze.php'),
         ], 'dynamo-breeze');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                SetupDynamoDbTables::class,
+                DynamoAccessPatterns::class,
+            ]);
+        }
     }
 }
