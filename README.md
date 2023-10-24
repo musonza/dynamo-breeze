@@ -19,6 +19,7 @@
 - [Handling Responses with DynamoBreezeResult](#handling-responses-with-dynamobreezeresult)
 - [Extending Query Parameter Mappings](#extending-query-parameter-mappings)
 - [Pagination](#pagination)
+- [Batch Retrieval with batchGet](#batch-retrieval-with-batchget)
 - [Testing](#testing)
 - [Contribution](#contribution)
 - [License](#license)
@@ -288,6 +289,35 @@ do {
 
 // At this point, $retrievedItemsCount contains the total count of items retrieved
 // And $items contains the items from the last fetched page
+```
+
+## Batch Retrieval with batchGet
+
+When working with DynamoDB, there may be situations where you need to retrieve multiple items by their primary keys. The `batchGet` method provided by DynamoBreeze allows for the retrieval of multiple items across one or more tables in a single operation, which can be a more efficient alternative to issuing multiple `GetItem` requests.
+
+In the following example, we are retrieving posts from multiple users stored in two different tables. We use batchGet to retrieve items from both the SocialMediaTable and ExampleTable using their primary keys.
+
+```php
+// Define the keys for the items we want to retrieve.
+$firstTableKeysToGet = [
+    ['PK' => 'USER#1', 'SK' => 'POST#123'],
+    ['PK' => 'USER#1', 'SK' => 'POST#124'],
+    ['PK' => 'USER#2', 'SK' => 'POST#123'],
+    ['PK' => 'USER#3', 'SK' => 'POST#1'],
+];
+
+$secondTableKeysToGet = [
+    ['PostId' => '1', 'Timestamp' => 11111],
+];
+
+$result = DynamoBreeze::batchGet([
+        'first_table_identifier' => [
+            'keys' => $firstTableKeysToGet,
+        ],
+        'second_table_identifier' => [
+            'keys' => $secondTableKeysToGet,
+        ],
+    ]);
 ```
 
 ## Testing
