@@ -19,7 +19,7 @@ class DefaultQueryBuilder implements QueryBuilderInterface
         $defaultConfigToQueryMap = [
             'key_condition_expression' => 'KeyConditionExpression',
             'filter_expression' => 'FilterExpression',
-            'gsi_name' => 'IndexName',
+            'index_name' => 'IndexName',
             'projection_expression' => 'ProjectionExpression',
             'scan_index_forward' => 'ScanIndexForward',
             'consistent_read' => 'ConsistentRead',
@@ -43,7 +43,6 @@ class DefaultQueryBuilder implements QueryBuilderInterface
             }
         }
 
-        // Add expressions if they exist.
         if ($expressions = $this->getExpressions()) {
             $query['ExpressionAttributeValues'] = $expressions;
         }

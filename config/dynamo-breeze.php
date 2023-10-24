@@ -21,7 +21,7 @@ return [
             ],
             'access_patterns' => [
                 'ExampleAccessPattern' => [
-                    'gsi_name' => 'GSI_Example',
+                    'index_name' => 'GSI_Example',
                     'key_condition_expression' => 'exampleId = :exampleId_val',
                 ],
             ],
