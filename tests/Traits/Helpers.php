@@ -77,6 +77,7 @@ trait Helpers
     private function fetchUserPosts(int $userId): DynamoBreezeResult
     {
         return DynamoBreeze::withTableIdentifier(self::TABLE_IDENTIFIER)
+            ->returnConsumedCapacity('TOTAL')
             ->accessPattern('FetchUserPosts', ['user_id' => $userId])
             ->get();
     }

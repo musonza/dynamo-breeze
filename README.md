@@ -173,26 +173,6 @@ $comments = DynamoBreeze::withTableIdentifier('social_media')
     ->get();
 ```
 
-#### Fetch Post Likes
-
-```php
-$likes = DynamoBreeze::withTableIdentifier('social_media')
-    ->accessPattern('FetchPostLikes', [
-        'post_id' => $postId,
-    ])
-    ->get();
-```
-
-#### Fetch Conversation Messages
-
-```php
-$messages = DynamoBreeze::withTableIdentifier('social_media')
-    ->accessPattern('FetchConversationMessages', [
-        'conversation_id' => $conversationId,
-    ])
-    ->get();
-```
-
 ## Handling Responses with DynamoBreezeResult
 
 All operations performed through the DynamoBreeze facade will return an instance of `DynamoBreezeResult`. This object provides a convenient way to interact with the data returned from DynamoDB, offering several methods to retrieve specific portions of the AWS result or the entire raw result.
@@ -319,6 +299,32 @@ $result = DynamoBreeze::batchGet([
             'keys' => $tableTwoKeysToGet,
         ],
     ]);
+```
+
+## Projection Expressions
+
+n the realm of database operations, especially when dealing with extensive datasets, fetching only the necessary pieces of data is crucial for performance optimization. In the context of DynamoDB and hence DynamoBreeze, this selective retrieval of attributes is handled through what's known as "Projection Expressions."
+
+```php
+$result = DynamoBreeze::withTableIdentifier('social_media')
+    ->accessPattern('FetchUserPosts', [
+        'user_id' => $userId,
+    ])
+    ->projectionExpression('Content, CategoryId')
+    ->get();
+```
+
+## ReturnConsumedCapacity
+
+The ability to retrieve the capacity units consumed by a particular operation can be crucial for tracking usage and costs.
+The `returnConsumedCapacity` method is used to specify whether to return the capacity units consumed by an operation. Here's how it's used:
+
+```php
+DynamoBreeze::withTableIdentifier('social_media')
+    ->returnConsumedCapacity('TOTAL')
+    ->accessPattern('FetchUserPosts', ['user_id' => $userId])
+    ->get();
+
 ```
 
 ## Testing
