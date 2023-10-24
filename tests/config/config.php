@@ -12,13 +12,13 @@ return [
             ],
             'access_patterns' => [
                 'ExampleAccessPattern' => [
-                    'gsi_name' => 'GSI_UserTimestamp',
+                    'index_name' => 'GSI_UserTimestamp',
                     'key_condition_expression' => 'UserId = :userIdVal',
                     'filter_expression' => null,
                     'expression_attribute_values' => null,
                 ],
                 'ExampleAccessPatternWithFilter' => [
-                    'gsi_name' => 'GSI_UserTimestamp',
+                    'index_name' => 'GSI_UserTimestamp',
                     'key_condition_expression' => 'UserId = :userIdVal',
                     'filter_expression' => 'Age > :minAge',
                     'expression_attribute_values' => [

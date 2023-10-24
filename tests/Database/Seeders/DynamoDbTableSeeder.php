@@ -16,7 +16,6 @@ class DynamoDbTableSeeder
 
     public function seed(array $items, string $tableIdentifier): void
     {
-        // Specify the table we're working with.
         $this->service->withTableIdentifier($tableIdentifier);
         foreach ($items as $item) {
             $this->putItem($item);

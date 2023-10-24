@@ -61,7 +61,7 @@ return [
         ],
     ],
     'FetchPostsByDate' => [
-        'gsi_name' => 'GSI1',
+        'index_name' => 'GSI1',
         'key_condition_expression' => '#partitionKey = :partitionValue AND #sortKey BETWEEN :startSortKey AND :endSortKey',
         'expression_attribute_names' => [
             '#partitionKey' => 'GSI1PK',
