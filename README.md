@@ -332,6 +332,50 @@ DynamoBreeze::withTableIdentifier('social_media')
 
 ```
 
+## Dynamo Breeze Pattern Details
+
+In the process of developing with Laravel, you may find yourself frequently interacting with the configuration details of DynamoDB tables. The dynamo-breeze:patterns Artisan command provides a clear overview of these details. This command fetches and neatly presents the access patterns for your DynamoDB tables, aiding in quick verification and reference. Below is a sample output illustrating the information structure:
+
+```bash
+~/Development/laravel ❯ php artisan dynamo-breeze:patterns                                                                                                                          
+
+Table: example_table
++--------------------------------+------------------------------------------------------------------+
+| Pattern                        | Details                                                          |
++--------------------------------+------------------------------------------------------------------+
+| ExampleAccessPattern           | {                                                                |
+|                                |     "index_name": "GSI_UserTimestamp",                           |
+|                                |     "key_condition_expression": "UserId = :userIdVal",           |
+|                                |     "filter_expression": null,                                   |
+|                                |     "expression_attribute_values": null                          |
+|                                | }                                                                |
+| ExampleAccessPatternWithFilter | {                                                                |
+|                                |     "index_name": "GSI_UserTimestamp",                           |
+|                                |     "key_condition_expression": "UserId = :userIdVal",           |
+|                                |     "filter_expression": "Age > :minAge",                        |
+|                                |     "expression_attribute_values": {                             |
+|                                |         ":pk_val": {                                             |
+|                                |             "S": "USER#<user_id>"                                |
+|                                |         },                                                       |
+|                                |         ":minAge": {                                             |
+|                                |             "N": "<age>"                                         |
+|                                |         }                                                        |
+|                                |     }                                                            |
+|                                | }                                                                |
+| FetchUserPosts                 | {                                                                |
+|                                |     "key_condition_expression": "PK = :pk_val AND SK = :sk_val", |
+|                                |     "expression_attribute_values": {                             |
+|                                |         ":pk_val": {                                             |
+|                                |             "S": "USER#<user_id>"                                |
+|                                |         },                                                       |
+|                                |         ":sk_val": {                                             |
+|                                |             "N": "<timestamp>"                                   |
+|                                |         }                                                        |
+|                                |     }                                                            |
+|                                | }                                                                |
++--------------------------------+------------------------------------------------------------------+
+```
+
 ## Testing
 
 `composer test`
