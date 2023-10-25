@@ -22,6 +22,7 @@
 - [Batch Retrieval with batchGet](#batch-retrieval-with-batchget)
 - [Projection Expressions](#projection-expressions)
 - [ReturnConsumedCapacity](#returnconsumedcapacity)
+- [Dynamo Breeze Pattern Details](#dynamo-breeze-pattern-details)
 - [Testing](#testing)
 - [Contribution](#contribution)
 - [License](#license)
